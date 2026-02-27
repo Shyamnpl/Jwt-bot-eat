@@ -385,6 +385,14 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot"""
+    # ✅ FIX: Create and set event loop properly
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    except RuntimeError:
+        # Loop already exists
+        pass
+    
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -399,6 +407,8 @@ def main():
     print("👨‍💻 Developer: @ShamNpl")
     print("📢 Channel: @FFbotsALL")
     print("🌍 From Nepal 🇳🇵")
+    
+    # ✅ FIX: Use run_polling with proper arguments
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
