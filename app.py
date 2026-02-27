@@ -9,9 +9,13 @@ Country: Nepal 🇳🇵
 import logging
 import httpx
 import asyncio
+import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+from flask import Flask, request
+import threading
+import time
 
 # Setup logging
 logging.basicConfig(
@@ -21,7 +25,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-BOT_TOKEN = "8792414945:AAHRGCQinm2LebmPIoCNHIw8CJ67QZraLTU"  # Replace with your bot token
+BOT_TOKEN = "8792414945:AAHRGCQinm2LebmPIoCNHIw8CJ67QZraLTU"
+PORT = int(os.environ.get('PORT', 8080))  # Render assigns PORT automatically
 
 # API Endpoints
 EAT_API_URL = "https://eat-access-eight.vercel.app/Eat"
@@ -29,6 +34,31 @@ JWT_API_URL = "https://access-jwt-delta.vercel.app/access-jwt"
 
 # User session storage
 user_sessions = {}
+
+# Flask app for health checks and port binding
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return """
+    <h1>🤖 Free Fire Token Bot is Running!</h1>
+    <p>Developer: @ShamNpl</p>
+    <p>Channel: @FFbotsALL</p>
+    <p>Status: ✅ Active</p>
+    <p>Uptime: Bot is running 24/7</p>
+    """
+
+@flask_app.route('/health')
+def health():
+    return {"status": "healthy", "timestamp": time.time()}
+
+@flask_app.route('/ping')
+def ping():
+    return "pong"
+
+def run_flask():
+    """Run Flask server in a separate thread"""
+    flask_app.run(host='0.0.0.0', port=PORT)
 
 # ==================== API Functions ====================
 
@@ -383,14 +413,13 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         pass
 
-def main():
-    """Start the bot"""
-    # ✅ FIX: Create and set event loop properly
+def run_bot():
+    """Run the Telegram bot"""
+    # Create and set event loop
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     except RuntimeError:
-        # Loop already exists
         pass
     
     # Create application
@@ -403,13 +432,21 @@ def main():
     application.add_error_handler(error_handler)
 
     # Start bot
-    print("🤖 Bot is starting... Press Ctrl+C to stop")
-    print("👨‍💻 Developer: @ShamNpl")
-    print("📢 Channel: @FFbotsALL")
-    print("🌍 From Nepal 🇳🇵")
-    
-    # ✅ FIX: Use run_polling with proper arguments
+    print("🤖 Bot is starting...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
-    main()
+    print("=" * 50)
+    print("🤖 Free Fire Token Bot")
+    print("👨‍💻 Developer: @ShamNpl")
+    print("📢 Channel: @FFbotsALL")
+    print("🌍 From Nepal 🇳🇵")
+    print("=" * 50)
+    
+    # Start Flask in a separate thread for port binding
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    print(f"✅ Web server started on port {PORT}")
+    
+    # Run the bot in the main thread
+    run_bot()
